@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Menu Recommendation</title>
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+        }
+
+        .container {
+            margin: 50px auto;
+            padding: 20px;
+            width: 50%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .filters label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            background: #28a745;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        #recommendations {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        #recommendations li {
+            padding: 10px;
+            background: #ffeb3b;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    {% extends 'shop/basic.html' %}
+    {% block title%} Tracker - canteen management{% endblock %}
+    {% block css %}
+    .footer {
+    position: fixed;
+    bottom: 0;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    }
+    {% endblock %}
+    {% block body %}
+    {% if user.is_authenticated %}
+    <center>
+        <div class="container">
+            <h1>🍽 Smart Menu Recommendations</h1>
+            <p>Select your preferences:</p>
+
+            <!-- User Preference Filters -->
+            <div class="filters">
+                <label><input type="checkbox" value="vegetarian"> Vegetarian</label>
+                <label><input type="checkbox" value="vegan"> Vegan</label>
+                <label><input type="checkbox" value="spicy"> Spicy</label>
+                <label><input type="checkbox" value="popular"> Popular</label>
+                <label><input type="checkbox" value="low-calorie"> Low Calorie</label>
+            </div>
+
+            <button onclick="recommendFood()">Get Recommendations</button>
+
+            <!-- Display Recommended Food Items -->
+            <h2>Recommended Dishes:</h2>
+            <ul id="recommendations"></ul>
+        </div>
+
+
+        <script>
+            // Sample food database with tags
+            const menuItems = [
+                { name: "Grilled Chicken", tags: ["low-calorie", "popular"] },
+                { name: "Vegan Salad", tags: ["vegan", "low-calorie"] },
+                { name: "Spicy Tacos", tags: ["spicy", "popular"] },
+                { name: "Cheese Pizza", tags: ["vegetarian", "popular"] },
+                { name: "Mushroom Soup", tags: ["vegetarian", "low-calorie"] },
+                { name: "Paneer Tikka", tags: ["vegetarian", "spicy"] },
+                { name: "Fruit Bowl", tags: ["vegan", "low-calorie", "popular"] },
+            ];
+
+            // Function to recommend food based on selected preferences
+            function recommendFood() {
+                const selectedPreferences = Array.from(document.querySelectorAll(".filters input:checked"))
+                    .map(checkbox => checkbox.value);
+
+                // Filter food items based on preferences
+                const recommendedDishes = menuItems.filter(item =>
+                    selectedPreferences.every(pref => item.tags.includes(pref))
+                );
+
+                // Display Recommendations
+                const recommendationsList = document.getElementById("recommendations");
+                recommendationsList.innerHTML = recommendedDishes.length
+                    ? recommendedDishes.map(item => `<li>${item.name}</li>`).join('')
+                    : "<li>No matching food items found</li>";
+            }
+
+        </script>
+    </center>
+    <script src="script.js"></script>
+    {% else %}
+    <div id="cont2">
+        <div class="alert alert-info">
+            <font style="font-size:22px">
+                <center>Before Track Your Order you need to <strong><a class="alert-link" data-toggle="modal"
+                            data-target="#loginModal">Login</a></strong></center>
+            </font>
+        </div>
+    </div>
+    {% endif %}
+
+    {% endblock %}
+</body>
+
+</html>

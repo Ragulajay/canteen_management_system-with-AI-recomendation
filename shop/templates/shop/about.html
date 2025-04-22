@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Menu Recommendation</title>
+  <!-- <link rel="stylesheet" href="styles.css"> -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f8f8f8;
+    }
+
+    .container {
+      margin: 50px auto;
+      padding: 20px;
+      width: 50%;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .filters label {
+      display: block;
+      margin: 10px 0;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border: none;
+      background: #28a745;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background: #218838;
+    }
+
+    #recommendations {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    #recommendations li {
+      padding: 10px;
+      background: #ffeb3b;
+      margin: 5px;
+      border-radius: 5px;
+      font-size: 18px;
+    }
+
+
+    /* Chatbot Styles */
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-family: Arial, sans-serif;
+      z-index: 9999;
+    }
+
+    #chat-icon {
+      background: #007bff;
+      color: white;
+      font-size: 24px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    #chat-window {
+      width: 300px;
+      height: 400px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: fadeIn 0.3s;
+    }
+
+    #chat-header {
+      background: #007bff;
+      color: white;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    #chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f1f1f1;
+    }
+
+    .bot-msg,
+    .user-msg {
+      max-width: 80%;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 10px;
+      clear: both;
+    }
+
+    .bot-msg {
+      background: #e0e0e0;
+      float: left;
+    }
+
+    .user-msg {
+      background: #d1e7ff;
+      float: right;
+    }
+
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    #chat-input input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      outline: none;
+    }
+
+    #chat-input button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0 15px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    #question-box ul {
+      list-style-type: none;
+      padding-left: 10px;
+    }
+
+    #question-box li {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #ffecb3;
+    }
+
+    #question-box li:hover {
+      background-color: #fff3cd;
+    }
+  </style>
+</head>
+
+<body>
+  {% extends 'shop/basic.html' %}
+  {% block title%} Tracker - canteen management{% endblock %}
+  {% block css %}
+  .footer {
+  position: fixed;
+  bottom: 0;
+  }
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  }
+  {% endblock %}
+  {% block body %}
+  {% if user.is_authenticated %}
+  <center>
+    <div class="container">
+      <!-- Chatbot Widget -->
+      <div id="chatbot-container">
+        <div id="chat-icon" onclick="toggleChat()">
+          💬
+        </div>
+
+        <div id="chat-window" style="display: none;">
+          <div id="chat-header">
+            FoodBot 🤖
+            <span onclick="toggleChat()" style="float:right; cursor:pointer;">✖</span>
+          </div>
+          <div id="chat-messages"></div>
+          <div id="chat-input">
+            <input type="text" id="botInput" placeholder="Ask me about food..." onkeypress="handleKey(event)">
+            <button onclick="sendBotMessage()">➤</button>
+
+
+
+          </div>
+          <button onclick="clearChat()"
+            style="margin-top: 5px; width: 100%; background: #dc3545; color: white; border: none; padding: 8px; border-radius: 0 0 10px 10px; cursor: pointer;">
+            🧹 Clear Chat
+          </button>
+        </div>
+      </div>
+
+
+      <h1>🍽 Smart Menu Recommendations</h1>
+      <p>Select your preferences:</p>
+
+      <!-- User Preference Filters -->
+      <div class="filters">
+        <label><input type="checkbox" value="vegetarian"> Vegetarian</label>
+        <label><input type="checkbox" value="vegan"> Vegan</label>
+        <label><input type="checkbox" value="spicy"> Spicy</label>
+        <label><input type="checkbox" value="popular"> Popular</label>
+        <label><input type="checkbox" value="low-calorie"> Low Calorie</label>
+      </div>
+
+      <button onclick="recommendFood()">Get Recommendations</button>
+
+      <!-- Display Recommended Food Items -->
+      <h2>Recommended Dishes:</h2>
+      <ul id="recommendations"></ul>
+    </div>
+
+    <!-- FAQ or Question Box -->
+    <div style="margin-top: 30px; text-align: left;">
+      <button onclick="toggleQuestionBox()"
+        style="background: #ffc107; color: black; border-radius: 5px; padding: 10px 15px; font-weight: bold;">
+        ❓ Need Help? Click to See Common Questions
+      </button>
+
+      <div id="question-box"
+        style="display: none; background: #fff8e1; border: 1px solid #ffe082; border-radius: 10px; margin-top: 10px; padding: 15px;">
+        <ul>
+          <li onclick="prefillBot('What are some vegetarian options?')">🥕 What are some vegetarian options?</li>
+          <li onclick="prefillBot('Show me spicy dishes')">🌶 Show me spicy dishes</li>
+          <li onclick="prefillBot('Show me spicy dishes')">What foods are high in protein?</li>
+          <li onclick="prefillBot('What’s healthy on the menu?')">🍏 What’s healthy on the menu?</li>
+          <li onclick="prefillBot('What’s popular?')">🔥 What’s popular?</li>
+          <li onclick="prefillBot('Do you have vegan meals?')">🌱 Do you have vegan meals?</li>
+          <li onclick="prefillBot('Do you have vegan meals?')">I love spicy food. What do you recommend?</li>
+        </ul>
+      </div>
+
+
+      <script>
+        // Sample food database with tags
+        const menuItems = [
+          { name: "Grilled Chicken", tags: ["low-calorie", "popular"] },
+          { name: "Vegan Salad", tags: ["vegan", "low-calorie"] },
+          { name: "Spicy Tacos", tags: ["spicy", "popular"] },
+          { name: "Cheese Pizza", tags: ["vegetarian", "popular"] },
+          { name: "Mushroom Soup", tags: ["vegetarian", "low-calorie"] },
+          { name: "Paneer Tikka", tags: ["vegetarian", "spicy"] },
+          { name: "Fruit Bowl", tags: ["vegan", "low-calorie", "popular"] },
+        ];
+
+        // Function to recommend food based on selected preferences
+        function recommendFood() {
+          const selectedPreferences = Array.from(document.querySelectorAll(".filters input:checked"))
+            .map(checkbox => checkbox.value);
+
+          // Filter food items based on preferences
+          const recommendedDishes = menuItems.filter(item =>
+            selectedPreferences.every(pref => item.tags.includes(pref))
+          );
+
+          // Display Recommendations
+          const recommendationsList = document.getElementById("recommendations");
+          recommendationsList.innerHTML = recommendedDishes.length
+            ? recommendedDishes.map(item => `<li>${item.name}</li>`).join('')
+            : "<li>No matching food items found</li>";
+        }
+
+        function toggleChat() {
+          const chat = document.getElementById("chat-window");
+          chat.style.display = (chat.style.display === "none") ? "flex" : "none";
+        }
+
+        function handleKey(event) {
+          if (event.key === "Enter") sendBotMessage();
+        }
+
+        function sendBotMessage() {
+          const input = document.getElementById("botInput");
+          const message = input.value.trim();
+          if (!message) return;
+
+          const chatbox = document.getElementById("chat-messages");
+
+          chatbox.innerHTML += `<div class="user-msg">${message}</div>`;
+
+          const reply = getChatbotResponse(message.toLowerCase());
+          setTimeout(() => {
+            chatbox.innerHTML += `<div class="bot-msg">${reply}</div>`;
+            chatbox.scrollTop = chatbox.scrollHeight;
+          }, 400);
+
+          input.value = "";
+        }
+
+        function getChatbotResponse(msg) {
+          if (msg.includes("vegetarian")) return "Try our Cheese Pizza or Mushroom Soup!";
+          if (msg.includes("vegan")) return "Our Vegan Salad and Fruit Bowl are perfect!";
+          if (msg.includes("spicy")) return "Paneer Tikka and Spicy Tacos are great!";
+          if (msg.includes("popular")) return "Top picks: Grilled Chicken, Fruit Bowl.";
+          if (msg.includes("protein")) return "Foods like paneer tikka, grilled chicken, lentils, and tofu are rich in protein.";
+          if (msg.includes("healthy") || msg.includes("low calorie")) return "Try our Vegan Salad or Mushroom Soup!";
+          if (msg.includes("recommend") || msg.includes("suggest")) return "Use the filters above or ask about food types!";
+          return "Hmm... I didn’t understand that. Ask me about vegan, spicy, or popular dishes!";
+        }
+        function clearChat() {
+          const chatbox = document.getElementById("chat-messages");
+          chatbox.innerHTML = `<div class="bot-msg">Hi! Ask me anything about our menu 🍔</div>`;
+        }
+        function toggleQuestionBox() {
+          const box = document.getElementById("question-box");
+          box.style.display = box.style.display === "none" ? "block" : "none";
+        }
+
+        function prefillBot(question) {
+          document.getElementById("botInput").value = question;
+          sendBotMessage();
+        }
+
+
+
+
+
+
+
+      </script>
+  </center>
+  <script src="script.js"></script>
+  {% else %}
+  <div id="cont2">
+    <div class="alert alert-info">
+      <font style="font-size:22px">
+        <center>Before Track Your Order you need to <strong><a class="alert-link" data-toggle="modal"
+              data-target="#loginModal">Login</a></strong></center>
+      </font>
+    </div>
+  </div>
+  {% endif %}
+
+  {% endblock %}
+</body>
+
+</html>
