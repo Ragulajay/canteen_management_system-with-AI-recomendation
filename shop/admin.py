@@ -52,9 +52,16 @@ class ProductAdmin(admin.ModelAdmin):
             try:
                 items = json.loads(order.items_json)
                 for key, value in items.items():
-                    if str(value[2]) == str(obj.id):  # value[2] = product_id
-                        total += int(value[0])        # value[0] = quantity
-            except Exception as e:
+                    # value format must be [quantity, product_name, product_id]
+                    if isinstance(value, list) and len(value) >= 3:
+                        try:
+                            product_id = int(value[2])
+                            quantity = int(value[0])
+                            if product_id == obj.id:
+                                total += quantity
+                        except (ValueError, TypeError):
+                            continue
+            except json.JSONDecodeError:
                 continue
         return total
 
@@ -62,6 +69,7 @@ class ProductAdmin(admin.ModelAdmin):
         return self.calculate_ordered_count(obj)
 
     ordered_count_display.short_description = "Sales Analytics"
+
 
 
 class ContactAdmin(admin.ModelAdmin):
